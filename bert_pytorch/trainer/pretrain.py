@@ -98,14 +98,14 @@ class BERTTrainer:
         total_correct = 0
         total_element = 0
         for i, data in enumerate(data_loader):
-            print(i)
+           #print(i)
             # 0. batch_data will be sent into the device(GPU or cpu)
             data = {key: value.to(self.device) for key, value in data.items()}
             
             # 1. forward the next_sentence_prediction and masked_lm model
             mask_lm_output = self.model.forward(data["bert_input"].float())
 
-            pdb.set_trace()
+            #pdb.set_trace()
 
             # 2-2. NLLLoss of predicting masked token word
             mask_loss = self.criterion(mask_lm_output.transpose(1, 2), data["bert_label"].float())

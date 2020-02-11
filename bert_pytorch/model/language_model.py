@@ -21,7 +21,7 @@ class BERTLM(nn.Module):
 
     def forward(self, x):
         x = self.bert(x)
-        pdb.set_trace()
+        #pdb.set_trace()
         return self.mask_lm(x)
 
 

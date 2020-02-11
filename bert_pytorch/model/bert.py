@@ -32,7 +32,7 @@ class BERT(nn.Module):
     def forward(self, x):
         # attention masking for padded token
         # torch.ByteTensor([batch_size, 1, seq_len, seq_len)
-        pdb.set_trace()
+        #pdb.set_trace()
         zero_boolean = torch.eq(x,0).all(2)
         mask = zero_boolean.clone()
         mask[zero_boolean == 0] = 1
