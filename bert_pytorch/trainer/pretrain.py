@@ -87,18 +87,19 @@ class BERTTrainer:
         str_code = "train" if train else "test"
 
 
-        '''
+
         # Setting the tqdm progress bar
         data_iter = tqdm.tqdm(enumerate(data_loader),
                               desc="EP_%s:%d" % (str_code, epoch),
                               total=len(data_loader),
                               bar_format="{l_bar}{r_bar}")
-        '''
+
         avg_loss = 0.0
         total_correct = 0
         total_element = 0
-        for i, data in enumerate(data_loader):
-           #print(i)
+        for i, data in data_iter:
+            #pdb.set_trace()
+            #print(i)
             # 0. batch_data will be sent into the device(GPU or cpu)
             data = {key: value.to(self.device) for key, value in data.items()}
             
@@ -108,7 +109,7 @@ class BERTTrainer:
             #pdb.set_trace()
 
             # 2-2. NLLLoss of predicting masked token word
-            mask_loss = self.criterion(mask_lm_output.transpose(1, 2), data["bert_label"].float())
+            mask_loss = self.criterion(mask_lm_output.transpose(1, 2), data["bert_label"])
 
             # 3. backward and optimization only in train
             if train:
@@ -122,11 +123,11 @@ class BERTTrainer:
                 "epoch": epoch,
                 "iter": i,
                 "avg_loss": avg_loss / (i + 1),
-                "loss": loss.item()
+                "loss": mask_loss.item()
             }
 
-            if i % self.log_freq == 0:
-                data_iter.write(str(post_fix))
+            #if i % self.log_freq == 0:
+            #    data_iter.write(str(post_fix))
 
         print("EP%d_%s, avg_loss=" % (epoch, str_code), avg_loss / len(data_iter))
 
