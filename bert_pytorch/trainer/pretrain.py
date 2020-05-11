@@ -23,7 +23,7 @@ class BERTTrainer:
     def __init__(self, bert: BERT, vocab_size: int,
                  train_dataloader: DataLoader, test_dataloader: DataLoader = None,
                  lr: float = 1e-4, betas=(0.9, 0.999), weight_decay: float = 0.01, warmup_steps=10000,
-                 with_cuda: bool = True, cuda_devices=None, log_freq: int = 10):
+                 with_cuda: bool = True, cuda_devices=None, log_freq: int = 100):
         """
         :param bert: BERT model which you want to train
         :param vocab_size: total word vocab size
@@ -126,8 +126,8 @@ class BERTTrainer:
                 "loss": mask_loss.item()
             }
 
-            #if i % self.log_freq == 0:
-            #    data_iter.write(str(post_fix))
+            if i % self.log_freq == 0:
+                data_iter.write(str(post_fix))
 
         print("EP%d_%s, avg_loss=" % (epoch, str_code), avg_loss / len(data_iter))
 
