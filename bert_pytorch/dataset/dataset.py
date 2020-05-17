@@ -76,17 +76,17 @@ class BERTDataset(Dataset):
                     # 80% randomly change token to mask token
                     if prob < 0.8:
                         bert_input[i] = self.mask
-                        output_label.append(self.mask_index)
+
 
                     # 10% randomly change token to random token
                     elif prob < 0.9:
                         bert_input[i] = self.embeddings[random.randrange(self.embeddings.shape[0])]
                         #append index of embedding to output label
-                        output_label.append(self.lookup_embedding(bert_input[i]))
+                        
                     
                     # 10% randomly change token to current token
-                    else:
-                        output_label.append(int(sample[i,0]))
+                    
+                    output_label.append(int(sample[i,0]))
 
                 else:
                     output_label.append(int(sample[i,0]))
