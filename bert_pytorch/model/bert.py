@@ -32,13 +32,12 @@ class BERT(nn.Module):
     def forward(self, x):
         # attention masking for padded token
         # torch.ByteTensor([batch_size, 1, seq_len, seq_len)
-        #pdb.set_trace()
         zero_boolean = torch.eq(x,0).all(2)
+        #pdb.set_trace()
         mask = zero_boolean.clone()
         mask[zero_boolean == 0] = 1
         mask[zero_boolean == 1] = 0
         mask = mask.unsqueeze(1).repeat(1,x.size(1),1).unsqueeze(1)
-
         # running over multiple transformer blocks
         for transformer in self.transformer_blocks:
             x = transformer.forward(x, mask)

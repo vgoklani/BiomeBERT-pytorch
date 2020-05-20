@@ -1,5 +1,5 @@
 import argparse
-
+import pdb
 from torch.utils.data import DataLoader
 
 from .model import BERT
@@ -24,11 +24,13 @@ def train():
     parser.add_argument("-e", "--epochs", type=int, default=10, help="number of epochs")
     parser.add_argument("-w", "--num_workers", type=int, default=0, help="dataloader worker size")
 
-    parser.add_argument("--with_cuda", type=bool, default=True, help="training with CUDA: true, or false")
-    parser.add_argument("--log_freq", type=int, default=10, help="printing loss every n iter: setting n")
+    parser.add_argument("--cuda", dest='with_cuda', action='store_true',help="train with CUDA")
+    parser.add_argument("--no-cuda",dest='with_cuda',action='store_false',help="train on CPU")
+    parser.set_defaults(with_cuda=False)
+    parser.add_argument("--log_freq", type=int, default=100, help="printing loss every n iter: setting n")
     parser.add_argument("--corpus_lines", type=int, default=None, help="total number of lines in corpus")
     parser.add_argument("--cuda_devices", type=int, nargs='+', default=None, help="CUDA device ids")
-    parser.add_argument("--on_memory", type=bool, default=True, help="Loading on memory: true or false")
+    parser.add_argument("--log_file", type=str,default=None,help="log file for performance metrics" )
 
     parser.add_argument("--lr", type=float, default=1e-3, help="learning rate of adam")
     parser.add_argument("--adam_weight_decay", type=float, default=0.01, help="weight_decay of adam")
@@ -36,6 +38,7 @@ def train():
     parser.add_argument("--adam_beta2", type=float, default=0.999, help="adam first beta value")
 
     args = parser.parse_args()
+
 
     print("Loading Train Dataset", args.train_dataset)
     train_dataset = BERTDataset(args.train_dataset, args.vocab_path)
@@ -55,7 +58,7 @@ def train():
     print("Creating BERT Trainer")
     trainer = BERTTrainer(bert, vocab_len, train_dataloader=train_data_loader, test_dataloader=test_data_loader,
                           lr=args.lr, betas=(args.adam_beta1, args.adam_beta2), weight_decay=args.adam_weight_decay,
-                          with_cuda=args.with_cuda, cuda_devices=args.cuda_devices, log_freq=args.log_freq)
+                          with_cuda=args.with_cuda, cuda_devices=args.cuda_devices, log_freq=args.log_freq,log_file=args.log_file)
 
     print("Training Start")
     for epoch in range(args.epochs):

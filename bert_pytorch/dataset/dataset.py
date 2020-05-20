@@ -31,7 +31,6 @@ class BERTDataset(Dataset):
 
 
         self.padding = np.zeros(self.embeddings.shape[1])
-
         #add cls, mask, and padding embeddings to vocab embeddings
         self.embeddings = np.concatenate((self.embeddings,np.expand_dims(self.mask,axis=0)))
         self.embeddings = np.concatenate((self.embeddings,np.expand_dims(self.cls,axis=0)))
@@ -51,11 +50,13 @@ class BERTDataset(Dataset):
         sample = self.samples[item]
         cls_marker = np.array([[self.cls_index,self.cls_frequency]],dtype=np.float)
         sample = np.concatenate((cls_marker,sample))
-        bert_input,bert_label,frequencies = self.match_sample_to_embedding(sample)
+        bert_input,bert_label,frequencies,mask_locations = self.match_sample_to_embedding(sample)
 
-
+   
         output = {"bert_input": bert_input,
                   "bert_label": bert_label,
+                  "species_frequencies": frequencies,
+                  "mask_locations": mask_locations
                   }
 
         return {key: torch.tensor(value) for key, value in output.items()}
@@ -64,6 +65,7 @@ class BERTDataset(Dataset):
         output_label = []
         bert_input = np.zeros((sample.shape[0],self.embeddings.shape[1]))
         frequencies = np.zeros(sample.shape[0])
+        mask_locations = np.full(sample.shape[0],False)
         for i in range(sample.shape[0]):
             #pdb.set_trace()
             if sample[i,self.frequency_index] > 0:
@@ -76,6 +78,7 @@ class BERTDataset(Dataset):
                     # 80% randomly change token to mask token
                     if prob < 0.8:
                         bert_input[i] = self.mask
+                        mask_locations[i] = True
 
 
                     # 10% randomly change token to random token
@@ -94,7 +97,7 @@ class BERTDataset(Dataset):
             else:
                 output_label.append(self.padding_index)
 
-        return bert_input, output_label,frequencies
+        return bert_input, output_label,frequencies,mask_locations
 
     def generate_random_frequency(self):
         return np.random.randint(self.frequency_min,self.frequency_max)

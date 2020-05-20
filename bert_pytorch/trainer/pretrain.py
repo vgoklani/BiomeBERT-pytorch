@@ -23,7 +23,7 @@ class BERTTrainer:
     def __init__(self, bert: BERT, vocab_size: int,
                  train_dataloader: DataLoader, test_dataloader: DataLoader = None,
                  lr: float = 1e-4, betas=(0.9, 0.999), weight_decay: float = 0.01, warmup_steps=10000,
-                 with_cuda: bool = True, cuda_devices=None, log_freq: int = 100):
+                 with_cuda: bool = True, cuda_devices=None, log_freq: int = 100, log_file=None):
         """
         :param bert: BERT model which you want to train
         :param vocab_size: total word vocab size
@@ -46,7 +46,6 @@ class BERTTrainer:
         self.model = BERTLM(bert, vocab_size).to(self.device)
         self.model = self.model.float()
 
-
         # Distributed GPU training if CUDA can detect more than 1 GPU
         if with_cuda and torch.cuda.device_count() > 1:
             print("Using %d GPUS for BERT" % torch.cuda.device_count())
@@ -65,6 +64,11 @@ class BERTTrainer:
 
         self.log_freq = log_freq
 
+        # clear log file
+        if log_file:
+            self.log_file = log_file
+            with open(self.log_file,"w+") as f:
+                f.write("EPOCH,MODE,TOTAL CORRECT,AVG LOSS,TOTAL ELEMENTS,ACCURACY,MASK CORRECT,TOTAL MASK,MASK ACCURACY\n")
         print("Total Parameters:", sum([p.nelement() for p in self.model.parameters()]))
 
     def train(self, epoch):
@@ -94,9 +98,11 @@ class BERTTrainer:
                               total=len(data_loader),
                               bar_format="{l_bar}{r_bar}")
 
-        avg_loss = 0.0
+        cumulative_loss = 0.0
         total_correct = 0
         total_element = 0
+        total_mask_correct = 0
+        total_mask = 0
         for i, data in data_iter:
             #pdb.set_trace()
             #print(i)
@@ -117,19 +123,30 @@ class BERTTrainer:
                 mask_loss.backward()
                 self.optim_schedule.step_and_update_lr()
 
-            avg_loss += mask_loss.item()
-
-            post_fix = {
-                "epoch": epoch,
-                "iter": i,
-                "avg_loss": avg_loss / (i + 1),
-                "loss": mask_loss.item()
-            }
+            
+            cumulative_loss += mask_loss.item()
+  
+            #update number of correct predictions and total predictions
+            predictions = torch.argmax(mask_lm_output,dim=2)
+            mask_token_predictions = torch.masked_select(predictions,data["mask_locations"])
+            mask_token_labels = torch.masked_select(data["bert_label"],data["mask_locations"])
+            total_mask_correct += torch.sum(mask_token_predictions == mask_token_labels).item()
+            total_mask += mask_token_labels.shape[0]
+            total_correct += torch.sum(predictions == data["bert_label"]).item()
+            total_element += data["bert_input"].shape[0]*data["bert_input"].shape[1]
 
             if i % self.log_freq == 0:
-                data_iter.write(str(post_fix))
+                if total_mask > 0:
+                    data_iter.write("epoch: {}, iter: {}, avg loss: {}, accuracy: {}%,mask accuracy: {}/{}={:.2f}%, loss: {}".format(epoch,i,cumulative_loss/(i+1),total_correct/total_element*100,total_mask_correct,total_mask,total_mask_correct/total_mask*100,mask_loss.item()))
+                else:
+                    data_iter.write("epoch: {}, iter: {}, avg loss: {}, accuracy: {}%,mask accuracy: N/A, loss: {}".format(epoch,i,cumulative_loss/(i+1),total_correct/total_element*100,total_mask_correct,mask_loss.item()))
+                #data_iter.write(str(post_fix))
 
-        print("EP%d_%s, avg_loss=" % (epoch, str_code), avg_loss / len(data_iter))
+        print("EP{}_{}, avg_loss={}, accuracy={:.2f}%".format(epoch,str_code,cumulative_loss / len(data_iter),total_correct/total_element*100))
+        if self.log_file:
+            with open(self.log_file,"a") as f:
+                f.write("{},{},{},{},{},{},{},{},{}\n".format(epoch,str_code,cumulative_loss/len(data_iter),total_correct,total_element,total_correct/total_element*100,total_mask_correct,total_mask,total_mask_correct/total_mask*100))
+        torch.cuda.empty_cache()
 
     def save(self, epoch, file_path="output/bert_trained.model"):
         """
