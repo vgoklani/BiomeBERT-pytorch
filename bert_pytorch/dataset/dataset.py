@@ -46,7 +46,7 @@ class BERTDataset(Dataset):
 
     def __getitem__(self, item):
         
-
+        #pdb.set_trace()
         sample = self.samples[item]
         cls_marker = np.array([[self.cls_index,self.cls_frequency]],dtype=np.float)
         sample = np.concatenate((cls_marker,sample))
@@ -66,19 +66,21 @@ class BERTDataset(Dataset):
         bert_input = np.zeros((sample.shape[0],self.embeddings.shape[1]))
         frequencies = np.zeros(sample.shape[0])
         mask_locations = np.full(sample.shape[0],False)
+        masked = False
         for i in range(sample.shape[0]):
             #pdb.set_trace()
             if sample[i,self.frequency_index] > 0:
                 bert_input[i] = self.embeddings[int(sample[i,0])]
                 frequencies[i] = sample[i,self.frequency_index]
                 prob = random.random()
-                if prob < 0.15 and i > 0:
+                if prob < 0.15 and i > 0 and sample[i,self.frequency_index] > 100:
                     prob /= 0.15
 
                     # 80% randomly change token to mask token
-                    if prob < 0.8:
+                    if prob < 0.8  and masked == False:
                         bert_input[i] = self.mask
                         mask_locations[i] = True
+                        masked = True
 
 
                     # 10% randomly change token to random token

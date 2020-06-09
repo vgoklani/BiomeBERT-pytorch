@@ -2,3 +2,4 @@ train_embeddings_2d.npy
 train_embeddings.npy
 vocab_embeddings.npy
 *.pyc
+startup
