@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 from torch.optim import Adam
+from torch.optim import SGD
 from torch.utils.data import DataLoader
 
 from ..model import BERTLM, BERT
@@ -52,15 +53,15 @@ class BERTTrainer:
             print("Using %d GPUS for BERT" % torch.cuda.device_count())
             self.model = nn.DataParallel(self.model, device_ids=cuda_devices)
             self.hardware = "parallel"
-            pdb.set_trace()
 
         # Setting the train and test data loader
         self.train_data = train_dataloader
         self.test_data = test_dataloader
 
         # Setting the Adam optimizer with hyper-param
-        self.optim = Adam(self.model.parameters(), lr=lr, betas=betas, weight_decay=weight_decay)
-        self.optim_schedule = ScheduledOptim(self.optim, self.bert.hidden, n_warmup_steps=warmup_steps)
+        #self.optim = Adam(self.model.parameters(), lr=lr, betas=betas, weight_decay=weight_decay)
+        #self.optim_schedule = ScheduledOptim(self.optim, self.bert.hidden, n_warmup_steps=warmup_steps)
+        self.optim = SGD(self.model.parameters(),lr=lr,momentum=0.9)
 
         # Using Negative Log Likelihood Loss function for predicting the masked_token
         self.criterion = nn.NLLLoss(ignore_index=0)
@@ -122,9 +123,11 @@ class BERTTrainer:
 
             # 3. backward and optimization only in train
             if train:
-                self.optim_schedule.zero_grad()
+                #self.optim_schedule.zero_grad()
+                self.optim.zero_grad()
                 mask_loss.backward()
-                self.optim_schedule.step_and_update_lr()
+                #self.optim_schedule.step_and_update_lr()
+                self.optim.step()
 
             cumulative_loss += mask_loss.item()
             
