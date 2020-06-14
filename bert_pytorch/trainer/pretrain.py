@@ -24,7 +24,7 @@ class BERTTrainer:
     def __init__(self, bert: BERT, vocab_size: int,
                  train_dataloader: DataLoader, test_dataloader: DataLoader = None,
                  lr: float = 1e-4, betas=(0.9, 0.999), weight_decay: float = 0.01, warmup_steps=10000,
-                 with_cuda: bool = True, cuda_devices=None, log_freq: int = 100, log_file=None):
+                 with_cuda: bool = True, cuda_devices=None, log_freq: int = 100, log_file=None,training_checkpoint=None):
         """
         :param bert: BERT model which you want to train
         :param vocab_size: total word vocab size
@@ -47,6 +47,8 @@ class BERTTrainer:
         # Initialize the BERT Language Model, with BERT model
         self.model = BERTLM(bert, vocab_size).to(self.device)
         self.model = self.model.float()
+        if(training_checkpoint):
+            self.model.load_state_dict(torch.load(training_checkpoint,map_location=self.device))
 
         # Distributed GPU training if CUDA can detect more than 1 GPU
         if with_cuda and torch.cuda.device_count() > 1:
@@ -71,8 +73,9 @@ class BERTTrainer:
         # clear log file
         if log_file:
             self.log_file = log_file
-            with open(self.log_file,"w+") as f:
-                f.write("EPOCH,MODE,TOTAL CORRECT,AVG LOSS,TOTAL ELEMENTS,ACCURACY,MASK CORRECT,TOTAL MASK,MASK ACCURACY\n")
+            if(training_checkpoint is None):
+                with open(self.log_file,"w+") as f:
+                    f.write("EPOCH,MODE,TOTAL CORRECT,AVG LOSS,TOTAL ELEMENTS,ACCURACY,MASK CORRECT,TOTAL MASK,MASK ACCURACY\n")
         print("Total Parameters:", sum([p.nelement() for p in self.model.parameters()]))
 
     def train(self, epoch):

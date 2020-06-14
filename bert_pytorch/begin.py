@@ -37,6 +37,9 @@ def train():
     parser.add_argument("--adam_beta1", type=float, default=0.9, help="adam first beta value")
     parser.add_argument("--adam_beta2", type=float, default=0.999, help="adam first beta value")
 
+    parser.add_argument("--load_model", type=str, default=None, help="path to saved state_dict of Masked LM model")
+    parser.add_argument("--resume_epoch", type=int, default=0, help="epoch to resume training at")
+
     args = parser.parse_args()
 
 
@@ -58,10 +61,11 @@ def train():
     print("Creating BERT Trainer")
     trainer = BERTTrainer(bert, vocab_len, train_dataloader=train_data_loader, test_dataloader=test_data_loader,
                           lr=args.lr, betas=(args.adam_beta1, args.adam_beta2), weight_decay=args.adam_weight_decay,
-                          with_cuda=args.with_cuda, cuda_devices=args.cuda_devices, log_freq=args.log_freq,log_file=args.log_file)
+                          with_cuda=args.with_cuda, cuda_devices=args.cuda_devices, log_freq=args.log_freq,log_file=args.log_file,
+                          training_checkpoint=args.load_model)
 
     print("Training Start")
-    for epoch in range(args.epochs):
+    for epoch in range(args.resume_epoch,args.epochs):
         trainer.train(epoch)
         trainer.save(epoch, args.output_path)
 
