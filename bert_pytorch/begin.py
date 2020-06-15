@@ -25,7 +25,7 @@ def train():
     parser.add_argument("-w", "--num_workers", type=int, default=0, help="dataloader worker size")
 
     parser.add_argument("--cuda", dest='with_cuda', action='store_true',help="train with CUDA")
-    parser.add_argument("--no-cuda",dest='with_cuda',action='store_false',help="train on CPU")
+    parser.add_argument("--no_cuda",dest='with_cuda',action='store_false',help="train on CPU")
     parser.set_defaults(with_cuda=False)
     parser.add_argument("--log_freq", type=int, default=100, help="printing loss every n iter: setting n")
     parser.add_argument("--corpus_lines", type=int, default=None, help="total number of lines in corpus")

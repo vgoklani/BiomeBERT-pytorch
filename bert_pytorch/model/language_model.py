@@ -19,8 +19,8 @@ class BERTLM(nn.Module):
         self.bert = bert
         self.mask_lm = MaskedLanguageModel(self.bert.hidden, vocab_size)
 
-    def forward(self, x):
-        x = self.bert(x)
+    def forward(self, x,freq):
+        x = self.bert(x,freq)
         #pdb.set_trace()
         return self.mask_lm(x)
 

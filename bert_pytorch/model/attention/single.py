@@ -10,11 +10,12 @@ class Attention(nn.Module):
     Compute 'Scaled Dot Product Attention
     """
 
-    def forward(self, query, key, value, mask=None, dropout=None):
+    def forward(self, query, key, value,freq, mask=None, dropout=None):
         #pdb.set_trace()
         #print("calculating attention scores")
         scores = torch.matmul(query, key.transpose(-2, -1)) \
                  / math.sqrt(query.size(-1))
+        scores = scores+torch.log(freq)
         #print("performing masked fill")
         if mask is not None:
             scores = scores.masked_fill(mask == 0, -1e9)

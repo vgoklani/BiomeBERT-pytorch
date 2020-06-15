@@ -117,7 +117,7 @@ class BERTTrainer:
             data = {key: value.to(self.device) for key, value in data.items()}
             
             # 1. forward the next_sentence_prediction and masked_lm model
-            mask_lm_output = self.model.forward(data["bert_input"].float())
+            mask_lm_output = self.model.forward(data["bert_input"].float(),data["species_frequencies"].float())
 
             #pdb.set_trace()
 
